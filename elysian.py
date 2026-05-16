@@ -54,6 +54,8 @@ def make_request(url, method='GET', headers=None, data=None, verbose=False, inse
     """Make HTTP request with given parameters"""
     if headers is None:
         headers = {}
+    if 'User-Agent' not in headers:
+        headers['User-Agent'] = 'Elysian/1.0'
     request = Request(url, data=data, headers=headers, method=method)
     
     ssl_context = ssl.create_default_context()
