@@ -224,10 +224,13 @@ Examples:
     if args.remote_name and output_file:
         content_filename = get_filename_from_content_disposition(response_headers)
         if content_filename:
-            os.rename(output_file, content_filename)
-            output_file = content_filename
-            if args.verbose:
-                print(f"Renamed to: {content_filename}")
+            try:
+                os.rename(output_file, content_filename)
+                output_file = content_filename
+                if args.verbose:
+                    print(f"Renamed to: {content_filename}")
+            except FileExistsError:
+                print(f"Warning: File '{content_filename}' already exists, keeping original name '{output_file}'", file=sys.stderr)
 
     if output_file:
         if args.verbose or show_progress:
@@ -246,7 +249,19 @@ Examples:
         if body is not None:
             print(body, end='')
 
-    sys.exit(status if status >= 100 and status < 600 else 0)
+    # Map HTTP status codes to appropriate exit codes
+    if status >= 200 and status < 300:
+        exit_code = 0  # Success
+    elif status >= 400 and status < 500:
+        exit_code = 1  # Client error
+    elif status >= 500 and status < 600:
+        exit_code = 2  # Server error
+    elif status >= 300 and status < 400:
+        exit_code = 0  # Redirect (treat as success)
+    else:
+        exit_code = 1  # Other errors
+    
+    sys.exit(exit_code)
 
 if __name__ == '__main__':
     main()
